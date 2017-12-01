@@ -4,6 +4,11 @@ __lua__
 
 -- constants
 max_hand_size = 4
+card_w = 24
+card_types = {
+  attack = {},
+  heal = {}
+}
 
 -- vars
 dbg1 = ''
@@ -14,16 +19,17 @@ dbg4 = ''
 deck_idx = 1
 deck = {}
 hand = {}
+discard_pile = {}
 
 selected_card_in_hand = 1
 
 -- special callbacks
 function _init()
   put_cards_in_deck()
-  put_cards_in_hand()
+  draw_cards_from_deck()
 end
 
-function _update60()
+function _update()
   -- print next card
   if btnp(5) then
     deck_idx = nextidx(deck_idx, len(deck))
@@ -44,12 +50,11 @@ function _update60()
   end
 
   dbg2 = selected_card_in_hand
-  dbg3 = len(hand)
 end
 
 function _draw()
   cls(1)
-  draw_hand()
+  paint_hand()
   debug(0, 0)
 end
 
@@ -62,20 +67,19 @@ function pressed_right()
   selected_card_in_hand = nextidx(selected_card_in_hand, len(hand))
 end
 
--- drawing functions ---------------------------------------------
+-- painting functions ---------------------------------------------
 
 -- note: 4 cards in hand max
-function draw_hand()
+function paint_hand()
   for i = 1,max_hand_size do
     local card = hand[i]
-    draw_card(card, i)
+    paint_card(card, i)
   end
 end
 
-function draw_card(card, card_idx)
-  local card_w = 16
+function paint_card(card, card_idx)
   local card_h = 32
-  local card_spacing = 12
+  local card_spacing = 6
   local card_spacing_vert = 4
   local x0 = card_spacing + (card_idx - 1) * (card_w + card_spacing)
   local y0 = 128 - (card_h + card_spacing_vert)
@@ -83,14 +87,71 @@ function draw_card(card, card_idx)
   -- also check for mode == selecting
   if selected_card_in_hand == card_idx then
     y0 -= 2
-    spr(1, x0 + 4, y0 - 10)
+    spr(1, x0 + (card_w / 2 - 4), y0 - 10)
   end
 
   rectfill(x0, y0, x0 + card_w, y0 + card_h, 6)
+
+  paint_card_icon(x0, y0, card.kind)
+
   print(card.value, x0 + 2, y0 + 2, 0)
 end
 
+function paint_card_icon(x, y, card_type)
+  local sprite_idx
+
+  if card_type == card_types.attack then
+    sprite_idx = 2
+  elseif card_type == card_types.heal then
+    sprite_idx = 3
+  end
+
+  if sprite_idx then
+    spr(sprite_idx, x + (card_w / 2 - 4), y + 14)
+  end
+end
+
+-- game functions ---------------------------------------------
+
+function put_cards_in_deck()
+  for i = 1,5 do
+    local c = make_card()
+    add(deck, c)
+  end
+end
+
+function draw_cards_from_deck()
+  deck = shuffle(deck)
+  for i = 1,max_hand_size do
+    local c = deck[i]
+    add(hand, c)
+  end
+end
+
+function make_card()
+  local k = card_types.attack
+
+  if rndint(1) == 0 then
+    k = card_types.heal
+  end
+
+  local c = {
+    value = rndint(50),
+    kind = k
+  }
+  return c
+end
+
 -- utility functions ---------------------------------------------
+
+function shuffle(tbl)
+  size = len(tbl)
+  for i = size, 1, -1 do
+    local rand = rndint(size - 1) + 1
+    tbl[i], tbl[rand] = tbl[rand], tbl[i]
+  end
+  return tbl
+end
 
 -- returns the next index, looping over max
 -- 1,3 -> 2
@@ -122,27 +183,6 @@ function len(t)
   return c
 end
 
-function put_cards_in_deck()
-  for i = 1,5 do
-    local c = make_card()
-    add(deck, c)
-  end
-end
-
-function put_cards_in_hand()
-  for i = 1,max_hand_size do
-    local c = make_card()
-    add(hand, c)
-  end
-end
-
-function make_card()
-  local c = {
-    value = rndint(50)
-  }
-  return c
-end
-
 -- from 0 to x inclusive
 function rndint(x)
   return flr(rnd(x + 1))
@@ -158,14 +198,14 @@ function debug(x,y)
 end
 
 __gfx__
-00000000000880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00700700000880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00077000000880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00077000088888800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00700700008888000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000088000000c000000088000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000088000000cc00000088000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0070070000088000000cc00000088000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0007700000088000000cc00088888888000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0007700008888880000cc00088888888000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+007007000088880000dddd0000088000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000880000005500000088000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000005500000088000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
