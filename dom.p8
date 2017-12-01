@@ -111,14 +111,13 @@ end
 -- game functions ---------------------------------------------
 
 function put_cards_in_deck()
-  for i = 1,10 do
+  for i = 1,11 do
     local c = make_card()
     add(deck, c)
   end
 end
 
 function draw_cards_from_deck()
-  deck = shuffle(deck)
   local cards_to_del = {}
 
   for i = 1,max_hand_size do
@@ -132,6 +131,18 @@ function draw_cards_from_deck()
   end
 end
 
+function draw_single_card_from_deck()
+  if len(deck) > 0 then
+    return deck[1]
+  else
+    shuffle_discard_back_into_deck()
+    return deck[1]
+  end
+end
+
+function shuffle_discard_back_into_deck()
+end
+
 function discard_hand()
   local cards_to_del = {}
 
@@ -143,6 +154,9 @@ function discard_hand()
   for c_to_del in all(cards_to_del) do
     del(hand, c_to_del)
   end
+end
+
+function move_card(card, from, to)
 end
 
 function make_card()
