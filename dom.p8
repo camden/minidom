@@ -111,23 +111,23 @@ end
 -- game functions ---------------------------------------------
 
 function put_cards_in_deck()
-  for i = 1,11 do
+  for i = 1,10 do
     local c = make_card()
     add(deck, c)
   end
 end
 
 function draw_cards_from_deck()
-  local cards_to_del = {}
+  local deck_size = len(deck)
 
-  for i = 1,max_hand_size do
-    local c = deck[i]
-    add(hand, c)
-    add(cards_to_del, c)
-  end
-
-  for c_to_del in all(cards_to_del) do
-    del(deck, c_to_del)
+  if deck_size < max_hand_size then
+    -- draw what you can
+    move_x_cards(deck, hand, deck_size)
+    shuffle_discard_back_into_deck()
+    -- draw the rest
+    move_x_cards(deck, hand, max_hand_size - deck_size)
+  else
+    move_x_cards(deck, hand, max_hand_size)
   end
 end
 
@@ -141,22 +141,43 @@ function draw_single_card_from_deck()
 end
 
 function shuffle_discard_back_into_deck()
+  move_all_cards(discard_pile, deck)
+  shuffle_deck()
+end
+
+function shuffle_deck()
+  deck = shuffle(deck)
 end
 
 function discard_hand()
+  move_all_cards(hand, discard_pile)
+end
+
+function move_all_cards(from, to)
   local cards_to_del = {}
 
-  for card in all(hand) do
-    add(discard_pile, card)
+  for card in all(from) do
+    add(to, card)
     add(cards_to_del, card)
   end
 
   for c_to_del in all(cards_to_del) do
-    del(hand, c_to_del)
+    del(from, c_to_del)
   end
 end
 
-function move_card(card, from, to)
+function move_x_cards(from, to, amount)
+  local cards_to_del = {}
+
+  for i = 1,amount do
+    local c = from[i]
+    add(to, c)
+    add(cards_to_del, c)
+  end
+
+  for c_to_del in all(cards_to_del) do
+    del(from, c_to_del)
+  end
 end
 
 function make_card()
