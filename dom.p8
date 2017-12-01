@@ -30,9 +30,10 @@ function _init()
 end
 
 function _update()
-  -- print next card
+
   if btnp(5) then
-    deck_idx = nextidx(deck_idx, len(deck))
+    discard_hand()
+    draw_cards_from_deck()
   end
 
   if btnp(0) then
@@ -43,13 +44,9 @@ function _update()
     pressed_right()
   end
 
-  local cur_card = deck[deck_idx]
-
-  if cur_card then
-    dbg1 = cur_card.value
-  end
-
-  dbg2 = selected_card_in_hand
+  dbg1 = 'size of deck: ' .. len(deck)
+  dbg2 = 'size of hand: ' .. len(hand)
+  dbg3 = 'size of discard: ' .. len(discard_pile)
 end
 
 function _draw()
@@ -73,7 +70,7 @@ end
 function paint_hand()
   for i = 1,max_hand_size do
     local card = hand[i]
-    paint_card(card, i)
+    if (card) then paint_card(card, i) end
   end
 end
 
@@ -114,7 +111,7 @@ end
 -- game functions ---------------------------------------------
 
 function put_cards_in_deck()
-  for i = 1,5 do
+  for i = 1,10 do
     local c = make_card()
     add(deck, c)
   end
@@ -122,9 +119,29 @@ end
 
 function draw_cards_from_deck()
   deck = shuffle(deck)
+  local cards_to_del = {}
+
   for i = 1,max_hand_size do
     local c = deck[i]
     add(hand, c)
+    add(cards_to_del, c)
+  end
+
+  for c_to_del in all(cards_to_del) do
+    del(deck, c_to_del)
+  end
+end
+
+function discard_hand()
+  local cards_to_del = {}
+
+  for card in all(hand) do
+    add(discard_pile, card)
+    add(cards_to_del, card)
+  end
+
+  for c_to_del in all(cards_to_del) do
+    del(hand, c_to_del)
   end
 end
 
