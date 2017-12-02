@@ -15,11 +15,28 @@ dbg1 = ''
 dbg2 = ''
 dbg3 = ''
 dbg4 = ''
+dbg5 = ''
 
-deck_idx = 1
-deck = {}
-hand = {}
-discard_pile = {}
+num_players = 2
+current_turn = 1
+
+-- phases:
+-- 1: action
+-- 2: buy
+current_phase = 1
+
+players = {
+  [1] = {
+    deck = {},
+    hand = {},
+    discard_pile = {}
+  },
+  [2] = {
+    deck = {},
+    hand = {},
+    discard_pile = {}
+  }
+}
 
 selected_card_in_hand = 1
 
@@ -36,6 +53,11 @@ function _update()
     draw_cards_from_deck()
   end
 
+  -- advance phase
+  if btnp(4) then
+    advance()
+  end
+
   if btnp(0) then
     pressed_left()
   end
@@ -44,9 +66,11 @@ function _update()
     pressed_right()
   end
 
-  dbg1 = 'size of deck: ' .. len(deck)
-  dbg2 = 'size of hand: ' .. len(hand)
-  dbg3 = 'size of discard: ' .. len(discard_pile)
+  dbg1 = 'size of deck: ' .. len(cur_deck())
+  dbg2 = 'size of hand: ' .. len(cur_hand())
+  dbg3 = 'size of discard: ' .. len(cur_discard_pile())
+  dbg4 = 'current turn: ' .. current_turn
+  dbg5 = 'current phase: ' .. current_phase
 end
 
 function _draw()
@@ -57,100 +81,73 @@ end
 
 -- input functions ---------------------------------------------
 function pressed_left()
-  selected_card_in_hand = previdx(selected_card_in_hand, len(hand))
+  selected_card_in_hand = previdx(selected_card_in_hand, len(cur_hand()))
 end
 
 function pressed_right()
-  selected_card_in_hand = nextidx(selected_card_in_hand, len(hand))
-end
-
--- painting functions ---------------------------------------------
-
--- note: 4 cards in hand max
-function paint_hand()
-  for i = 1,max_hand_size do
-    local card = hand[i]
-    if (card) then paint_card(card, i) end
-  end
-end
-
-function paint_card(card, card_idx)
-  local card_h = 32
-  local card_spacing = 6
-  local card_spacing_vert = 4
-  local x0 = card_spacing + (card_idx - 1) * (card_w + card_spacing)
-  local y0 = 128 - (card_h + card_spacing_vert)
-
-  -- also check for mode == selecting
-  if selected_card_in_hand == card_idx then
-    y0 -= 2
-    spr(1, x0 + (card_w / 2 - 4), y0 - 10)
-  end
-
-  rectfill(x0, y0, x0 + card_w, y0 + card_h, 6)
-
-  paint_card_icon(x0, y0, card.kind)
-
-  print(card.value, x0 + 2, y0 + 2, 0)
-end
-
-function paint_card_icon(x, y, card_type)
-  local sprite_idx
-
-  if card_type == card_types.attack then
-    sprite_idx = 2
-  elseif card_type == card_types.heal then
-    sprite_idx = 3
-  end
-
-  if sprite_idx then
-    spr(sprite_idx, x + (card_w / 2 - 4), y + 14)
-  end
+  selected_card_in_hand = nextidx(selected_card_in_hand, len(cur_hand()))
 end
 
 -- game functions ---------------------------------------------
 
+function cur_player()
+  return players[current_turn]
+end
+
+function advance()
+  current_phase = nextidx(current_phase, 2)
+  if current_phase == 1 then 
+    local last_turn = current_turn
+    current_turn = nextidx(current_turn, num_players) 
+    changed_turn(last_turn, current_turn)
+  end
+end
+
+function changed_turn(from, to)
+
+end
+
 function put_cards_in_deck()
   for i = 1,10 do
     local c = make_card()
-    add(deck, c)
+    add(cur_deck(), c)
   end
 end
 
 function draw_cards_from_deck()
-  local deck_size = len(deck)
+  local deck_size = len(cur_deck())
 
   if deck_size < max_hand_size then
     -- draw what you can
-    move_x_cards(deck, hand, deck_size)
+    move_x_cards(cur_deck(), cur_hand(), deck_size)
     shuffle_discard_back_into_deck()
     -- draw the rest
-    move_x_cards(deck, hand, max_hand_size - deck_size)
+    move_x_cards(cur_deck(), cur_hand(), max_hand_size - deck_size)
   else
-    move_x_cards(deck, hand, max_hand_size)
+    move_x_cards(cur_deck(), cur_hand(), max_hand_size)
   end
 end
 
 function draw_single_card_from_deck()
-  if len(deck) > 0 then
-    return deck[1]
+  if len(cur_deck()) > 0 then
+    return cur_deck()[1]
   else
     shuffle_discard_back_into_deck()
-    return deck[1]
+    return cur_deck()[1]
   end
 end
 
 function shuffle_discard_back_into_deck()
-  move_all_cards(discard_pile, deck)
+  move_all_cards(cur_discard_pile(), cur_deck())
   shuffle_deck()
 end
 
 function shuffle_deck()
-  deck = shuffle(deck)
+  cur_player().deck = shuffle(cur_deck())
 end
 
 function discard_hand()
-  move_all_cards(hand, discard_pile)
+  move_all_cards(cur_hand(), cur_discard_pile())
 end
 
 function move_all_cards(from, to)
@@ -194,7 +191,63 @@ function make_card()
   return c
 end
 
+-- painting functions ---------------------------------------------
+
+-- note: 4 cards in hand max
+function paint_hand()
+  for i = 1,max_hand_size do
+    local card = cur_hand()[i]
+    if (card) then paint_card(card, i) end
+  end
+end
+
+function paint_card(card, card_idx)
+  local card_h = 32
+  local card_spacing = 6
+  local card_spacing_vert = 4
+  local x0 = card_spacing + (card_idx - 1) * (card_w + card_spacing)
+  local y0 = 128 - (card_h + card_spacing_vert)
+
+  -- also check for mode == selecting
+  if selected_card_in_hand == card_idx then
+    y0 -= 2
+    spr(1, x0 + (card_w / 2 - 4), y0 - 10)
+  end
+
+  rectfill(x0, y0, x0 + card_w, y0 + card_h, 6)
+
+  paint_card_icon(x0, y0, card.kind)
+
+  print(card.value, x0 + 2, y0 + 2, 0)
+end
+
+function paint_card_icon(x, y, card_type)
+  local sprite_idx
+
+  if card_type == card_types.attack then
+    sprite_idx = 2
+  elseif card_type == card_types.heal then
+    sprite_idx = 3
+  end
+
+  if sprite_idx then
+    spr(sprite_idx, x + (card_w / 2 - 4), y + 14)
+  end
+end
+
 -- utility functions ---------------------------------------------
+
+function cur_deck()
+  return cur_player().deck
+end
+
+function cur_hand()
+  return cur_player().hand
+end
+
+function cur_discard_pile()
+  return cur_player().discard_pile
+end
 
 function shuffle(tbl)
   size = len(tbl)
@@ -242,11 +295,12 @@ end
 
 function debug(x,y)
   color(7)
-  local line_dist = 10
+  local line_dist = 6
   print(dbg1,x,y)
   print(dbg2,x,y+line_dist)
   print(dbg3,x,y+line_dist*2)
   print(dbg4,x,y+line_dist*3)
+  print(dbg5,x,y+line_dist*4)
 end
 
 __gfx__
