@@ -45,7 +45,7 @@ dbg5 = ''
 num_players = 3
 current_turn = 1
 
-status_msg = ''
+status_msg = 'select a card to activate'
 
 -- phases:
 -- 1: action
@@ -96,14 +96,18 @@ players = {
   }
 }
 
-cur_selection_kind = selection.shop
+cur_selection_kind = selection.player
 selected_card = 1
 
 -- special callbacks
 function _init()
-  put_cards_in_deck()
-  draw_cards_from_deck(cur_player())
-  put_cards_in_shop_deck()
+  for i=1,num_players do
+    put_cards_in_deck(players[i])
+    draw_cards_from_deck(players[i])
+  end
+
+  -- add cards to the shop
+  put_cards_in_deck(players.shop)
   draw_cards_from_deck(players.shop)
 end
 
@@ -189,17 +193,10 @@ function perform_cleanup()
   draw_cards_from_deck(cur_player())
 end
 
-function put_cards_in_deck()
+function put_cards_in_deck(player)
   for i = 1,10 do
     local c = make_card()
-    add(cur_deck(), c)
-  end
-end
-
-function put_cards_in_shop_deck()
-  for i = 1,10 do
-    local c = make_card()
-    add(players.shop.deck, c)
+    add(player.deck, c)
   end
 end
 
@@ -316,7 +313,7 @@ function paint_card(card, card_idx, y0, selection_kind)
   -- also check for mode == selecting
   if (selection_kind == cur_selection_kind) and
     (selected_card == card_idx) then
-    y0 -= 2
+    y0 -= 1
     spr(1, x0 + (card_w / 2 - 4), y0 - 10)
   end
 
