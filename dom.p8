@@ -18,7 +18,9 @@ max_hand_size = 4
 shop_hand_size = 4
 card_w = 24
 card_h = 32
-card_spacing_vert = 4
+card_spacing = 6
+card_spacing_vert = 12
+current_player_color = 9
 
 starting_health = 15
 
@@ -40,8 +42,10 @@ dbg3 = ''
 dbg4 = ''
 dbg5 = ''
 
-num_players = 6
+num_players = 3
 current_turn = 1
+
+status_msg = ''
 
 -- phases:
 -- 1: action
@@ -155,12 +159,28 @@ end
 
 function advance()
   current_phase = nextidx(current_phase, 2)
+  update_status_message(current_phase)
+
   if current_phase == 1 then 
-    -- current phase is 1, so it's the next player's turn
+    -- current phase is 1 (Action), so it's the next player's turn
     -- so we perform "cleanup" for the last player
     perform_cleanup()
-
     current_turn = nextidx(current_turn, num_players) 
+
+    selected_card = 1
+    cur_selection_kind = selection.player
+  elseif current_phase == 2 then 
+    -- current phase is 2 (Buy)
+    selected_card = 1
+    cur_selection_kind = selection.shop
+  end
+end
+
+function update_status_message(phase)
+  if current_phase == 1 then
+    status_msg = 'select a card to activate'
+  elseif current_phase == 2 then
+    status_msg = 'select a card to buy'
   end
 end
 
@@ -283,15 +303,14 @@ function paint_shop_hand()
 end
 
 function paint_player_card(card, i)
-  paint_card(card, i, 128 - (card_h + card_spacing_vert), selection.player)
+  paint_card(card, i, 127 - (card_h + card_spacing_vert), selection.player)
 end
 
 function paint_shop_card(card, i)
-  paint_card(card, i, 10, selection.shop)
+  paint_card(card, i, 30, selection.shop)
 end
 
 function paint_card(card, card_idx, y0, selection_kind)
-  local card_spacing = 6
   local x0 = card_spacing + (card_idx - 1) * (card_w + card_spacing)
 
   -- also check for mode == selecting
@@ -323,24 +342,39 @@ function paint_card_icon(x, y, card_type)
 end
 
 function paint_ui()
+  paint_status_message()
+  paint_health_bar()
+end
+
+function paint_status_message()
+  print(status_msg, card_spacing, 127 - card_spacing_vert + 4, 7)
+end
+
+function paint_health_bar()
   local bar_h = 14
   local health_y = 1
   local row_offset = 7
-  local col_offset = 28
+  local col_offset = 44
   rectfill(0, 0, 127, bar_h, 2)
   -- show health for each player
   local col_count = 0
   for i=1,num_players do
-    local health_x = 5 + col_count * col_offset
+    local health_x = 10 + col_count * col_offset
+    local player_color = 7
+    
+    if (i == current_turn) then player_color = current_player_color end
+
     if i % 2 == 1 then
       spr(4, health_x - 4, health_y)
-      print('p' .. i .. ':' .. players[i].health, 
-        health_x,
+      print('p' .. i, health_x, health_y, player_color)
+      print(':' .. players[i].health, 
+        health_x + 8,
         health_y, 7)
     else
       spr(4, health_x - 4, health_y + row_offset)
-      print('p' .. i .. ':' .. players[i].health, 
-        health_x,
+      print('p' .. i, health_x, health_y + row_offset, player_color)
+      print(':' .. players[i].health, 
+        health_x + 8,
         health_y + row_offset, 7)
       col_count += 1
     end
