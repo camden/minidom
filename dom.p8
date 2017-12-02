@@ -23,6 +23,7 @@ card_spacing_vert = 12
 current_player_color = 9
 
 starting_health = 15
+winning_points = 20
 
 selection = {
   none = {},
@@ -55,36 +56,42 @@ current_phase = 1
 players = {
   [1] = {
     health = starting_health,
+    points = 0,
     deck = {},
     hand = {},
     discard_pile = {}
   },
   [2] = {
     health = starting_health,
+    points = 0,
     deck = {},
     hand = {},
     discard_pile = {}
   },
   [3] = {
     health = starting_health,
+    points = 0,
     deck = {},
     hand = {},
     discard_pile = {}
   },
   [4] = {
     health = starting_health,
+    points = 0,
     deck = {},
     hand = {},
     discard_pile = {}
   },
   [5] = {
     health = starting_health,
+    points = 0,
     deck = {},
     hand = {},
     discard_pile = {}
   },
   [6] = {
     health = starting_health,
+    points = 0,
     deck = {},
     hand = {},
     discard_pile = {}
@@ -120,7 +127,7 @@ function _update()
 
   -- advance phase
   if btnp(4) then
-    advance()
+    activate_current()
   end
 
   if btnp(0) then
@@ -130,12 +137,6 @@ function _update()
   if btnp(1) then
     pressed_right()
   end
-
-  dbg1 = 'size of deck: ' .. len(cur_deck())
-  dbg2 = 'size of hand: ' .. len(cur_hand())
-  dbg3 = 'size of discard: ' .. len(cur_discard_pile())
-  dbg4 = 'current turn: player ' .. current_turn
-  dbg5 = 'current phase: ' .. get_phase_name(current_phase)
 end
 
 function _draw()
@@ -143,7 +144,7 @@ function _draw()
   paint_current_hand()
   paint_shop_hand()
   paint_ui()
-  --debug(0, 0)
+  debug(0, 0)
 end
 
 -- input functions ---------------------------------------------
@@ -156,6 +157,26 @@ function pressed_right()
 end
 
 -- game functions ---------------------------------------------
+
+function activate_current()
+  if cur_selection_kind == selection.player then
+    local card = cur_hand()[selected_card]
+    activate_card_from_hand(card)
+  elseif cur_selection_kind == selection.shop then
+    local card = players.shop.hand[selected_card]
+    buy_card(card)
+  end
+end
+
+function activate_card_from_hand(card)
+  dbg1 = card.value
+  advance()
+end
+
+function buy_card(card)
+  dbg2 = card.value
+  advance()
+end
 
 function cur_player()
   return players[current_turn]
