@@ -44,6 +44,11 @@ dbg4 = ''
 dbg5 = ''
 
 num_players = 3
+
+-- who has the first player counter?
+next_first_player = 1
+last_first_player = next_first_player
+
 current_turn = 1
 
 status_msg = 'select a card to activate'
@@ -121,7 +126,7 @@ end
 function _update()
 
   if btnp(5) then
-    discard_hand()
+    discard_hand(cur_player())
     draw_cards_from_deck(cur_player())
   end
 
@@ -169,13 +174,23 @@ function activate_current()
 end
 
 function activate_card_from_hand(card)
-  dbg1 = card.value
   advance()
 end
 
 function buy_card(card)
-  dbg2 = card.value
+  del(players.shop.hand, card)
+  add(cur_discard_pile(), card)
+  if card.value % 2 == 0 then
+    set_next_first_player(current_turn)
+  end
   advance()
+end
+
+-- expects a number where 1 is first player, etc
+function set_next_first_player(player)
+  last_first_player = next_first_player
+  next_first_player = player
+  dbg5 = '1st player: ' .. next_first_player
 end
 
 function cur_player()
@@ -187,18 +202,30 @@ function advance()
   update_status_message(current_phase)
 
   if current_phase == 1 then 
-    -- current phase is 1 (Action), so it's the next player's turn
+    -- current phase is 1 (action), so it's the next player's turn
     -- so we perform "cleanup" for the last player
     perform_cleanup()
     current_turn = nextidx(current_turn, num_players) 
 
+    if current_turn == last_first_player then
+      finished_round()
+    end
+
     selected_card = 1
     cur_selection_kind = selection.player
   elseif current_phase == 2 then 
-    -- current phase is 2 (Buy)
+    -- current phase is 2 (buy)
     selected_card = 1
     cur_selection_kind = selection.shop
   end
+end
+
+function finished_round()
+  current_turn = next_first_player
+  last_first_player = next_first_player
+
+  discard_hand(players.shop)
+  draw_cards_from_deck(players.shop)
 end
 
 function update_status_message(phase)
@@ -210,7 +237,7 @@ function update_status_message(phase)
 end
 
 function perform_cleanup()
-  discard_hand()
+  discard_hand(cur_player())
   draw_cards_from_deck(cur_player())
 end
 
@@ -257,8 +284,8 @@ function shuffle_deck(deck)
   deck = shuffle(deck)
 end
 
-function discard_hand()
-  move_all_cards(cur_hand(), cur_discard_pile())
+function discard_hand(player)
+  move_all_cards(player.hand, player.discard_pile)
 end
 
 function move_all_cards(from, to)
@@ -379,16 +406,23 @@ function paint_health_bar()
   for i=1,num_players do
     local health_x = 10 + col_count * col_offset
     local player_color = 7
+    local is_first_player = last_first_player == i
     
     if (i == current_turn) then player_color = current_player_color end
 
     if i % 2 == 1 then
+      if is_first_player then
+        paint_first_player_marker(health_x - 8, health_y)
+      end
       spr(4, health_x - 4, health_y)
       print('p' .. i, health_x, health_y, player_color)
       print(':' .. players[i].health, 
         health_x + 8,
         health_y, 7)
     else
+      if is_first_player then
+        paint_first_player_marker(health_x - 8, health_y + row_offset)
+      end
       spr(4, health_x - 4, health_y + row_offset)
       print('p' .. i, health_x, health_y + row_offset, player_color)
       print(':' .. players[i].health, 
@@ -397,6 +431,10 @@ function paint_health_bar()
       col_count += 1
     end
   end
+end
+
+function paint_first_player_marker(x, y)
+  spr(5, x, y)
 end
 
 -- utility functions ---------------------------------------------
@@ -478,9 +516,9 @@ function debug(x,y)
 end
 
 __gfx__
-0000000000088000000c000000088000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000088000000cc00000088000888000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0070070000088000000cc00000088000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000088000000c000000088000080000000700000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000088000000cc00000088000888000000700000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0070070000088000000cc00000088000080000000700000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0007700000088000000cc00088888888000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0007700008888880000cc00088888888000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 007007000088880000dddd0000088000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
