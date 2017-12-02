@@ -31,6 +31,11 @@ selection = {
   shop = {}
 }
 
+effect_types = {
+  attack_all = {},
+  none = {}
+}
+
 card_types = {
   attack = {},
   heal = {}
@@ -174,12 +179,30 @@ function activate_current()
 end
 
 function activate_card_from_hand(card)
+  activate_card(card)
   advance()
+end
+
+function activate_card(card)
+  for effect in all(card.effects) do
+    activate_effect(effect)
+  end
+end
+
+function activate_effect(fx)
+  if fx.kind == effect_types.attack_all then
+    for i=1, num_players do
+      if current_turn != i then
+        players[i].health -= fx.value
+      end
+    end
+  end
 end
 
 function buy_card(card)
   del(players.shop.hand, card)
   add(cur_discard_pile(), card)
+  -- if card == "first player" card
   if card.value % 2 == 0 then
     set_next_first_player(current_turn)
   end
@@ -315,8 +338,19 @@ function move_x_cards(from, to, amount)
   end
 end
 
+function make_effect(kind, value)
+  local fx = {
+    kind = kind,
+    value = value
+  }
+
+  return fx
+end
+
 function make_card()
   local k = card_types.attack
+  local effects = {}
+  add(effects, make_effect(effect_types.attack_all, 2))
 
   if rndint(1) == 0 then
     k = card_types.heal
@@ -324,7 +358,8 @@ function make_card()
 
   local c = {
     value = rndint(50),
-    kind = k
+    kind = k,
+    effects = effects
   }
   return c
 end
@@ -438,6 +473,10 @@ function paint_first_player_marker(x, y)
 end
 
 -- utility functions ---------------------------------------------
+
+function wait(a) 
+  for i = 1,a do flip() end 
+end
 
 function get_phase_name(phase_num)
   if phase_num == 1 then
