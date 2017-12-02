@@ -4,12 +4,12 @@ __lua__
 
 --[[
 
-A turn consists of the following sequence:
-- Perform actions
-- Buy cards
-- Discard whole hand
-- Draw 4 new cards
-- Pass turn to next player
+a turn consists of the following sequence:
+- perform actions
+- buy cards
+- discard whole hand
+- draw 4 new cards
+- pass turn to next player
 
 --]]
 
@@ -40,7 +40,7 @@ dbg3 = ''
 dbg4 = ''
 dbg5 = ''
 
-num_players = 3
+num_players = 6
 current_turn = 1
 
 -- phases:
@@ -135,7 +135,7 @@ function _draw()
   paint_current_hand()
   paint_shop_hand()
   paint_ui()
-  debug(0, 0)
+  --debug(0, 0)
 end
 
 -- input functions ---------------------------------------------
@@ -323,9 +323,28 @@ function paint_card_icon(x, y, card_type)
 end
 
 function paint_ui()
-  rectfill(0, 0, 127, 10, 2)
+  local bar_h = 14
+  local health_y = 1
+  local row_offset = 7
+  local col_offset = 28
+  rectfill(0, 0, 127, bar_h, 2)
   -- show health for each player
-  spr(4, 0, 0)
+  local col_count = 0
+  for i=1,num_players do
+    local health_x = 5 + col_count * col_offset
+    if i % 2 == 1 then
+      spr(4, health_x - 4, health_y)
+      print('p' .. i .. ':' .. players[i].health, 
+        health_x,
+        health_y, 7)
+    else
+      spr(4, health_x - 4, health_y + row_offset)
+      print('p' .. i .. ':' .. players[i].health, 
+        health_x,
+        health_y + row_offset, 7)
+      col_count += 1
+    end
+  end
 end
 
 -- utility functions ---------------------------------------------
@@ -407,9 +426,9 @@ function debug(x,y)
 end
 
 __gfx__
-0000000000088000000c000000088000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000088000000cc00000088000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0070070000088000000cc00000088000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000088000000c000000088000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000088000000cc00000088000888000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0070070000088000000cc00000088000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0007700000088000000cc00088888888000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0007700008888880000cc00088888888000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 007007000088880000dddd0000088000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
