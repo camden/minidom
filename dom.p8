@@ -20,6 +20,8 @@ card_w = 24
 card_h = 32
 card_spacing_vert = 4
 
+starting_health = 15
+
 selection = {
   none = {},
   player = {},
@@ -48,31 +50,37 @@ current_phase = 1
 
 players = {
   [1] = {
+    health = starting_health,
     deck = {},
     hand = {},
     discard_pile = {}
   },
   [2] = {
+    health = starting_health,
     deck = {},
     hand = {},
     discard_pile = {}
   },
   [3] = {
+    health = starting_health,
     deck = {},
     hand = {},
     discard_pile = {}
   },
   [4] = {
+    health = starting_health,
     deck = {},
     hand = {},
     discard_pile = {}
   },
   [5] = {
+    health = starting_health,
     deck = {},
     hand = {},
     discard_pile = {}
   },
   [6] = {
+    health = starting_health,
     deck = {},
     hand = {},
     discard_pile = {}
@@ -126,6 +134,7 @@ function _draw()
   cls(1)
   paint_current_hand()
   paint_shop_hand()
+  paint_ui()
   debug(0, 0)
 end
 
@@ -311,6 +320,12 @@ function paint_card_icon(x, y, card_type)
   if sprite_idx then
     spr(sprite_idx, x + (card_w / 2 - 4), y + 14)
   end
+end
+
+function paint_ui()
+  rectfill(0, 0, 127, 10, 2)
+  -- show health for each player
+  spr(4, 0, 0)
 end
 
 -- utility functions ---------------------------------------------
