@@ -2,6 +2,17 @@ pico-8 cartridge // http://www.pico-8.com
 version 14
 __lua__
 
+--[[
+
+A turn consists of the following sequence:
+- Perform actions
+- Buy cards
+- Discard whole hand
+- Draw 4 new cards
+- Pass turn to next player
+
+--]]
+
 -- constants
 max_hand_size = 4
 card_w = 24
@@ -97,14 +108,17 @@ end
 function advance()
   current_phase = nextidx(current_phase, 2)
   if current_phase == 1 then 
-    local last_turn = current_turn
+    -- current phase is 1, so it's the next player's turn
+    -- so we perform "cleanup" for the last player
+    perform_cleanup()
+
     current_turn = nextidx(current_turn, num_players) 
-    changed_turn(last_turn, current_turn)
   end
 end
 
-function changed_turn(from, to)
-
+function perform_cleanup()
+  discard_hand()
+  draw_cards_from_deck()
 end
 
 function put_cards_in_deck()
