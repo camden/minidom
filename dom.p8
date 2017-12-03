@@ -568,7 +568,7 @@ end
 function paint_ui()
   paint_money()
   paint_status_message()
-  paint_health_bar()
+  paint_player_bar()
 end
 
 function paint_money()
@@ -579,22 +579,22 @@ function paint_status_message()
   print(status_msg, card_spacing, 127 - card_spacing_vert + 4, 7)
 end
 
-function paint_health_bar()
+function paint_player_bar()
   local bar_h = 14
-  local health_y = 1
+  local y = 1
   local row_offset = 7
   local col_offset = 44
   rectfill(0, 0, 127, bar_h, 2)
   -- show health for each player
   local col_count = 0
   for i=1,num_players do
-    local health_x = 10 + col_count * col_offset
+    local x = 10 + col_count * col_offset
     local player = players[i]
 
     if i % 2 == 1 then
-      paint_player_info(player, i, health_x, health_y)
+      paint_player_info(player, i, x, y)
     else
-      paint_player_info(player, i, health_x, health_y + row_offset)
+      paint_player_info(player, i, x, y + row_offset)
       col_count += 1
     end
   end
@@ -616,8 +616,6 @@ function paint_player_info(player, player_index, x, y)
     selected = true
   end
 
-  spr(4, x - 4, y)
-
   local selected_color = 11
 
   if selected then
@@ -626,14 +624,19 @@ function paint_player_info(player, player_index, x, y)
     color(player_color)
   end
 
-  print('p' .. player_index, x, y)
+  print('p' .. player_index, x - 4, y)
 
   if selected then
     color(selected_color)
   else
     color(7)
   end
-  print(':' .. player.health, x + 8, y)
+
+  print(':', x + 4, y)
+  spr(4, x + 8, y)
+  print(player.health, x + 12, y)
+  spr(8, x + 22, y)
+  print(player.points, x + 27, y)
 end
 
 function paint_first_player_marker(x, y)
@@ -720,10 +723,10 @@ function debug(x,y)
 end
 
 __gfx__
-00000000008000000c00700000880000080000000700000009aa00004ccccc000000000000000000000000000000000000000000000000000000000000000000
-00000000008000000cc070000088000088800000070000009aa9a0004ccccc000000000000000000000000000000000000000000000000000000000000000000
-00700700008000000cc070008888880008000000070000009aa9a0004ccccc000000000000000000000000000000000000000000000000000000000000000000
-00077000888880000cc000008888880000000000000000009aa9a0004ccccc000000000000000000000000000000000000000000000000000000000000000000
+00000000008000000c00700000880000080000000700000009aa00004ccccc004cc0000000000000000000000000000000000000000000000000000000000000
+00000000008000000cc070000088000088800000070000009aa9a0004ccccc004cc0000000000000000000000000000000000000000000000000000000000000
+00700700008000000cc070008888880008000000070000009aa9a0004ccccc004000000000000000000000000000000000000000000000000000000000000000
+00077000888880000cc000008888880000000000000000009aa9a0004ccccc004000000000000000000000000000000000000000000000000000000000000000
 00077000088800000cc0000000880000000000000000000009aa0000400000000000000000000000000000000000000000000000000000000000000000000000
 0070070000800000dddd000000880000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000550000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000000000000
