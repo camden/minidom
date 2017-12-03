@@ -235,7 +235,7 @@ function activate_effect(fx)
   elseif fx.kind == effect_types.attack_one then
     cur_selection_kind = selection.players
     yield()
-    players[selected_index].health = 69
+    players[selected_index].health -= fx.value
   end
 end
 
