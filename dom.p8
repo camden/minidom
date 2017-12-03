@@ -27,12 +27,14 @@ winning_points = 20
 
 selection = {
   none = {},
-  player = {},
-  shop = {}
+  hand = {},
+  shop = {},
+  players = {}
 }
 
 effect_types = {
   attack_all = {},
+  attack_one = {},
   none = {}
 }
 
@@ -113,8 +115,8 @@ players = {
   }
 }
 
-cur_selection_kind = selection.player
-selected_card = 1
+cur_selection_kind = selection.hand
+selected_index = 1
 
 -- special callbacks
 function _init()
@@ -129,11 +131,6 @@ function _init()
 end
 
 function _update()
-
-  if btnp(5) then
-    discard_hand(cur_player())
-    draw_cards_from_deck(cur_player())
-  end
 
   -- advance phase
   if btnp(4) then
@@ -159,21 +156,36 @@ end
 
 -- input functions ---------------------------------------------
 function pressed_left()
-  selected_card = previdx(selected_card, len(cur_hand()))
+
+  selected_index = previdx(selected_index, get_max_num_for_selection())
 end
 
 function pressed_right()
-  selected_card = nextidx(selected_card, len(cur_hand()))
+  selected_index = nextidx(selected_index, get_max_num_for_selection())
+end
+
+function get_max_num_for_selection()
+  local max_num = 0
+
+  if cur_selection_kind == selection.hand then
+    max_num = len(cur_hand())
+  elseif cur_selection_kind == selection.shop then
+    max_num = len(players.shop.hand)
+  elseif cur_selection_kind == selection.players then
+    max_num = num_players
+  end
+
+  return max_num
 end
 
 -- game functions ---------------------------------------------
 
 function activate_current()
-  if cur_selection_kind == selection.player then
-    local card = cur_hand()[selected_card]
+  if cur_selection_kind == selection.hand then
+    local card = cur_hand()[selected_index]
     activate_card_from_hand(card)
   elseif cur_selection_kind == selection.shop then
-    local card = players.shop.hand[selected_card]
+    local card = players.shop.hand[selected_index]
     buy_card(card)
   end
 end
@@ -196,6 +208,12 @@ function activate_effect(fx)
         players[i].health -= fx.value
       end
     end
+  elseif fx.kind == effect_types.attack_one then
+    for i=1, num_players do
+      if current_turn != i then
+        players[i].health -= fx.value
+      end
+    end
   end
 end
 
@@ -213,7 +231,6 @@ end
 function set_next_first_player(player)
   last_first_player = next_first_player
   next_first_player = player
-  dbg5 = '1st player: ' .. next_first_player
 end
 
 function cur_player()
@@ -234,11 +251,11 @@ function advance()
       finished_round()
     end
 
-    selected_card = 1
-    cur_selection_kind = selection.player
+    selected_index = 1
+    cur_selection_kind = selection.hand
   elseif current_phase == 2 then 
     -- current phase is 2 (buy)
-    selected_card = 1
+    selected_index = 1
     cur_selection_kind = selection.shop
   end
 end
@@ -383,7 +400,7 @@ function paint_shop_hand()
 end
 
 function paint_player_card(card, i)
-  paint_card(card, i, 127 - (card_h + card_spacing_vert), selection.player)
+  paint_card(card, i, 127 - (card_h + card_spacing_vert), selection.hand)
 end
 
 function paint_shop_card(card, i)
@@ -395,7 +412,7 @@ function paint_card(card, card_idx, y0, selection_kind)
 
   -- also check for mode == selecting
   if (selection_kind == cur_selection_kind) and
-    (selected_card == card_idx) then
+    (selected_index == card_idx) then
     y0 -= 1
     spr(1, x0 + (card_w / 2 - 4), y0 - 10)
   end
@@ -440,32 +457,51 @@ function paint_health_bar()
   local col_count = 0
   for i=1,num_players do
     local health_x = 10 + col_count * col_offset
-    local player_color = 7
-    local is_first_player = last_first_player == i
-    
-    if (i == current_turn) then player_color = current_player_color end
+    local player = players[i]
 
     if i % 2 == 1 then
-      if is_first_player then
-        paint_first_player_marker(health_x - 8, health_y)
-      end
-      spr(4, health_x - 4, health_y)
-      print('p' .. i, health_x, health_y, player_color)
-      print(':' .. players[i].health, 
-        health_x + 8,
-        health_y, 7)
+      paint_player_info(player, i, health_x, health_y)
     else
-      if is_first_player then
-        paint_first_player_marker(health_x - 8, health_y + row_offset)
-      end
-      spr(4, health_x - 4, health_y + row_offset)
-      print('p' .. i, health_x, health_y + row_offset, player_color)
-      print(':' .. players[i].health, 
-        health_x + 8,
-        health_y + row_offset, 7)
+      paint_player_info(player, i, health_x, health_y + row_offset)
       col_count += 1
     end
   end
+end
+
+function paint_player_info(player, player_index, x, y)
+  local player_color = 7
+  if (player_index == current_turn) then player_color = current_player_color end
+
+  local is_first_player = last_first_player == player_index
+
+  if is_first_player then
+    paint_first_player_marker(x - 8, y)
+  end
+
+  local selected = false
+  if cur_selection_kind == selection.players and
+    selected_index == player_index then
+    selected = true
+  end
+
+  spr(4, x - 4, y)
+
+  local selected_color = 11
+
+  if selected then
+    color(selected_color)
+  else
+    color(player_color)
+  end
+
+  print('p' .. player_index, x, y)
+
+  if selected then
+    color(selected_color)
+  else
+    color(7)
+  end
+  print(':' .. player.health, x + 8, y)
 end
 
 function paint_first_player_marker(x, y)
