@@ -115,6 +115,9 @@ players = {
   }
 }
 
+cur_card_activation = nil
+cur_active_card = nil
+
 cur_selection_kind = selection.hand
 selected_index = 1
 
@@ -181,7 +184,11 @@ end
 -- game functions ---------------------------------------------
 
 function activate_current()
-  if cur_selection_kind == selection.hand then
+  -- if there is a card currently being activated, then
+  -- we should continue activating that effect
+  if cur_card_activation != nil then
+    continue_activating_card()
+  elseif cur_selection_kind == selection.hand then
     local card = cur_hand()[selected_index]
     activate_card_from_hand(card)
   elseif cur_selection_kind == selection.shop then
@@ -190,9 +197,26 @@ function activate_current()
   end
 end
 
+function continue_activating_card()
+  assert(cur_card_activation != nil, 'cur_card_activation must exist')
+  coresume(cur_card_activation, cur_active_card)
+
+  local cr_status = costatus(cur_card_activation)
+
+  if cr_status == 'dead' then
+    cur_card_activation = nil
+    cur_active_card = nil
+    advance()
+  end
+end
+
 function activate_card_from_hand(card)
-  activate_card(card)
-  advance()
+  if not cur_card_activation then
+    cur_card_activation = cocreate(activate_card)
+    cur_active_card = card
+  end
+
+  continue_activating_card()
 end
 
 function activate_card(card)
@@ -209,11 +233,9 @@ function activate_effect(fx)
       end
     end
   elseif fx.kind == effect_types.attack_one then
-    for i=1, num_players do
-      if current_turn != i then
-        players[i].health -= fx.value
-      end
-    end
+    cur_selection_kind = selection.players
+    yield()
+    players[selected_index].health = 69
   end
 end
 
@@ -367,7 +389,7 @@ end
 function make_card()
   local k = card_types.attack
   local effects = {}
-  add(effects, make_effect(effect_types.attack_all, 2))
+  add(effects, make_effect(effect_types.attack_one, 2))
 
   if rndint(1) == 0 then
     k = card_types.heal
