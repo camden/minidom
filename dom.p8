@@ -311,24 +311,42 @@ function activate_effect(fx)
       end
     end
   elseif fx.kind == effect_types.draw_cards then
-    do_effect_draw_cards()
+    do_effect_draw_cards(fx)
   elseif fx.kind == effect_types.attack_one then
-    do_effect_attack_one()
+    do_effect_attack_one(fx)
   elseif fx.kind == effect_types.heal then
-    do_effect_heal()
+    do_effect_heal(fx)
   end
 end
 
-function do_effect_draw_cards()
-  selected_index = 1
-  cur_selection_kind = selection.hand
-  status_msg = 'select a player. deal ' .. fx.value .. ' dmg.'
-  yield()
-  players[selected_index].health -= fx.value
-  status_msg = 'dealt ' .. fx.value .. ' dmg to p' .. selected_index
+function do_effect_draw_cards(fx)
+  local cards_drawn = 0
+
+  while cards_drawn < fx.value do
+    if len(cur_hand()) == max_hand_size then
+      -- now we must discard a card before we continue
+      selected_index = 1
+      cur_selection_kind = selection.hand
+      status_msg = 'select a card to discard'
+      yield()
+
+      -- discard the selected card
+      local card_to_discard = cur_hand()[selected_index]
+      del(cur_hand(), card_to_discard)
+      add(cur_discard_pile(), card_to_discard)
+    else
+      -- TODO fix bug with drawing a second card and it not being full hand
+      -- draw a card, remove it from deck
+      local card = draw_single_card_from_deck()
+      -- now add the card to the hand
+      add(cur_hand(), card)
+
+      cards_drawn += 1
+    end
+  end
 end
 
-function do_effect_attack_one()
+function do_effect_attack_one(fx)
   selected_index = 1
   cur_selection_kind = selection.players
   status_msg = 'select a player. deal ' .. fx.value .. ' dmg.'
@@ -337,7 +355,7 @@ function do_effect_attack_one()
   status_msg = 'dealt ' .. fx.value .. ' dmg to p' .. selected_index
 end
 
-function do_effect_heal()
+function do_effect_heal(fx)
   selected_index = 1
   cur_selection_kind = selection.players
   status_msg = 'select a player. heal ' .. fx.value .. ' dmg.'
@@ -425,7 +443,7 @@ function initialize_player_deck(player)
   local gold_fx = make_effect(effect_types.gold, 1)
   local points_fx = make_effect(effect_types.points, 1)
   local attack_one_fx = make_effect(effect_types.attack_one, 1)
-  local cards_fx = make_effect(effect_types.draw_cards, 1)
+  local cards_fx = make_effect(effect_types.draw_cards, 2)
 
   add_cards(make_card(gold_fx), 1, player)
   add_cards(make_card(points_fx), 1, player)
@@ -463,13 +481,16 @@ function draw_cards_from_deck(player)
   end
 end
 
+-- removes that card from the deck
 function draw_single_card_from_deck(player)
-  if len(cur_deck()) > 0 then
-    return cur_deck()[1]
-  else
+  if len(cur_deck()) == 0 then
     shuffle_discard_back_into_deck(player)
-    return cur_deck()[1]
   end
+
+  local c = cur_deck()[1]
+  del(cur_deck(), c)
+
+  return c
 end
 
 function shuffle_discard_back_into_deck(player)
