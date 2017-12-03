@@ -145,9 +145,12 @@ function _update()
     return
   end
 
-  -- advance phase
   if btnp(4) then
     activate_current()
+  end
+
+  if btnp(5) then
+    cancel_current()
   end
 
   if btnp(0) then
@@ -207,6 +210,13 @@ function activate_current()
   end
 end
 
+function cancel_current()
+  if cur_selection_kind == selection.shop and current_phase == 2 then
+    status_msg = 'p' .. current_turn .. ' skipped buying.'
+    wait(10, advance)
+  end
+end
+
 function continue_activating_card()
   assert(cur_card_activation != nil, 'cur_card_activation must exist')
   coresume(cur_card_activation, cur_active_card)
@@ -217,8 +227,7 @@ function continue_activating_card()
     cur_card_activation = nil
     cur_active_card = nil
 
-    -- advance after 2 second
-    wait(20, advance)
+    wait(10, advance)
   end
 end
 
@@ -309,7 +318,7 @@ function update_status_message(phase)
   if current_phase == 1 then
     status_msg = 'select a card to activate'
   elseif current_phase == 2 then
-    status_msg = 'select a card to buy'
+    status_msg = 'buy a card. \x97 to pass.'
   end
 end
 
