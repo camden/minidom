@@ -38,6 +38,11 @@ effect_types = {
   none = {}
 }
 
+game_states = {
+  normal = {},
+  next_turn_screen = {}
+}
+
 card_types = {
   attack = {},
   heal = {}
@@ -124,6 +129,8 @@ cur_active_card = nil
 cur_selection_kind = selection.hand
 selected_index = 1
 
+cur_game_state = game_states.next_turn_screen
+
 -- special callbacks
 function _init()
   for i=1,num_players do
@@ -142,6 +149,15 @@ function _update()
     if wait_counter == 0 then
       wait_callback()
     end
+    return
+  end
+
+  if cur_game_state == game_states.next_turn_screen then
+
+    if btnp(4) then
+      cur_game_state = game_states.normal
+    end
+
     return
   end
 
@@ -168,11 +184,14 @@ function _draw()
   paint_shop_hand()
   paint_ui()
   debug(0, 0)
+
+  if cur_game_state == game_states.next_turn_screen then
+    paint_next_turn_screen()
+  end
 end
 
 -- input functions ---------------------------------------------
 function pressed_left()
-
   selected_index = previdx(selected_index, get_max_num_for_selection())
 end
 
@@ -289,21 +308,27 @@ function advance()
 
   if current_phase == 1 then 
     -- current phase is 1 (action), so it's the next player's turn
-    -- so we perform "cleanup" for the last player
-    perform_cleanup()
-    current_turn = nextidx(current_turn, num_players) 
-
-    if current_turn == last_first_player then
-      finished_round()
-    end
-
-    selected_index = 1
-    cur_selection_kind = selection.hand
+    finished_turn()
   elseif current_phase == 2 then 
     -- current phase is 2 (buy)
     selected_index = 1
     cur_selection_kind = selection.shop
   end
+end
+
+function finished_turn()
+    -- so we perform "cleanup" for the last player
+    perform_cleanup()
+    current_turn = nextidx(current_turn, num_players) 
+    cur_game_state = game_states.next_turn_screen
+
+    if current_turn == last_first_player then
+      finished_round()
+    end
+
+    -- get ready for the next turn
+    selected_index = 1
+    cur_selection_kind = selection.hand
 end
 
 function finished_round()
@@ -428,6 +453,12 @@ function make_card()
 end
 
 -- painting functions ---------------------------------------------
+
+function paint_next_turn_screen()
+  rectfill(0, 0, 127, 127, 3)
+  print('p' .. current_turn .. ', your turn!', 35, 40, 7)
+  print('press \x8e to continue...', 20, 80, 7)
+end
 
 -- note: 4 cards in hand max
 function paint_current_hand()
