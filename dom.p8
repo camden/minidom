@@ -60,6 +60,9 @@ current_turn = 1
 
 status_msg = 'select a card to activate'
 
+wait_counter = 0
+wait_callback = nil
+
 -- phases:
 -- 1: action
 -- 2: buy
@@ -134,6 +137,13 @@ function _init()
 end
 
 function _update()
+  if wait_counter > 0 then
+    wait_counter -= 1
+    if wait_counter == 0 then
+      wait_callback()
+    end
+    return
+  end
 
   -- advance phase
   if btnp(4) then
@@ -206,7 +216,9 @@ function continue_activating_card()
   if cr_status == 'dead' then
     cur_card_activation = nil
     cur_active_card = nil
-    advance()
+
+    -- advance after 2 second
+    wait(20, advance)
   end
 end
 
@@ -233,9 +245,12 @@ function activate_effect(fx)
       end
     end
   elseif fx.kind == effect_types.attack_one then
+    selected_index = 1
     cur_selection_kind = selection.players
+    status_msg = 'select a player. deal ' .. fx.value .. ' dmg.'
     yield()
     players[selected_index].health -= fx.value
+    status_msg = 'dealt ' .. fx.value .. ' dmg to p' .. selected_index
   end
 end
 
@@ -532,8 +547,10 @@ end
 
 -- utility functions ---------------------------------------------
 
-function wait(a) 
-  for i = 1,a do flip() end 
+-- in tenths of a second
+function wait(a, optional_callback) 
+  wait_counter = a * 3
+  wait_callback = optional_callback
 end
 
 function get_phase_name(phase_num)
