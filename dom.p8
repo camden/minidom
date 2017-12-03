@@ -398,9 +398,11 @@ end
 function initialize_player_deck(player)
   local gold_fx = make_effect(effect_types.gold, 1)
   local points_fx = make_effect(effect_types.points, 1)
+  local attack_one_fx = make_effect(effect_types.attack_one, 1)
 
   add_cards(make_card(gold_fx), 2, player)
   add_cards(make_card(points_fx), 2, player)
+  add_cards(make_card(attack_one_fx), 1, player)
 end
 
 function add_cards(card, amount, player)
