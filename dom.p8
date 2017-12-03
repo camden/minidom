@@ -263,11 +263,6 @@ function continue_activating_card()
   local cr_status = costatus(cur_card_activation)
 
   if cr_status == 'dead' then
-
-    -- spend the card!
-    del(cur_hand(), cur_active_card)
-    add(cur_discard_pile(), cur_active_card)
-
     cur_card_activation = nil
     cur_active_card_effect_num = nil
     cur_active_card = nil
@@ -281,6 +276,10 @@ function activate_card_from_hand(card)
     cur_card_activation = cocreate(activate_card)
     cur_active_card = card
     cur_active_card_effect_num = 1
+
+    -- spend the card!
+    del(cur_hand(), card)
+    add(cur_discard_pile(), card)
   end
 
   continue_activating_card()
@@ -321,8 +320,12 @@ function activate_effect(fx)
 end
 
 function do_effect_draw_cards()
-  -- skip for now
-  return
+  selected_index = 1
+  cur_selection_kind = selection.hand
+  status_msg = 'select a player. deal ' .. fx.value .. ' dmg.'
+  yield()
+  players[selected_index].health -= fx.value
+  status_msg = 'dealt ' .. fx.value .. ' dmg to p' .. selected_index
 end
 
 function do_effect_attack_one()
