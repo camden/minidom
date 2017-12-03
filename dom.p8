@@ -33,6 +33,9 @@ selection = {
 }
 
 effect_types = {
+  draw_cards = {
+    spr_num = 9
+  },
   gold = {
     spr_num = 6
   },
@@ -260,6 +263,11 @@ function continue_activating_card()
   local cr_status = costatus(cur_card_activation)
 
   if cr_status == 'dead' then
+
+    -- spend the card!
+    del(cur_hand(), cur_active_card)
+    add(cur_discard_pile(), cur_active_card)
+
     cur_card_activation = nil
     cur_active_card_effect_num = nil
     cur_active_card = nil
@@ -303,21 +311,36 @@ function activate_effect(fx)
         players[i].health -= fx.value
       end
     end
+  elseif fx.kind == effect_types.draw_cards then
+    do_effect_draw_cards()
   elseif fx.kind == effect_types.attack_one then
-    selected_index = 1
-    cur_selection_kind = selection.players
-    status_msg = 'select a player. deal ' .. fx.value .. ' dmg.'
-    yield()
-    players[selected_index].health -= fx.value
-    status_msg = 'dealt ' .. fx.value .. ' dmg to p' .. selected_index
+    do_effect_attack_one()
   elseif fx.kind == effect_types.heal then
-    selected_index = 1
-    cur_selection_kind = selection.players
-    status_msg = 'select a player. heal ' .. fx.value .. ' dmg.'
-    yield()
-    players[selected_index].health += fx.value
-    status_msg = 'restored ' .. fx.value .. ' health to p' .. selected_index
+    do_effect_heal()
   end
+end
+
+function do_effect_draw_cards()
+  -- skip for now
+  return
+end
+
+function do_effect_attack_one()
+  selected_index = 1
+  cur_selection_kind = selection.players
+  status_msg = 'select a player. deal ' .. fx.value .. ' dmg.'
+  yield()
+  players[selected_index].health -= fx.value
+  status_msg = 'dealt ' .. fx.value .. ' dmg to p' .. selected_index
+end
+
+function do_effect_heal()
+  selected_index = 1
+  cur_selection_kind = selection.players
+  status_msg = 'select a player. heal ' .. fx.value .. ' dmg.'
+  yield()
+  players[selected_index].health += fx.value
+  status_msg = 'restored ' .. fx.value .. ' health to p' .. selected_index
 end
 
 function buy_card(card)
@@ -399,14 +422,21 @@ function initialize_player_deck(player)
   local gold_fx = make_effect(effect_types.gold, 1)
   local points_fx = make_effect(effect_types.points, 1)
   local attack_one_fx = make_effect(effect_types.attack_one, 1)
+  local cards_fx = make_effect(effect_types.draw_cards, 1)
 
-  add_cards(make_card(gold_fx), 2, player)
-  add_cards(make_card(points_fx), 2, player)
-  add_cards(make_card(attack_one_fx), 1, player)
+  add_cards(make_card(gold_fx), 1, player)
+  add_cards(make_card(points_fx), 1, player)
+  add_cards(make_card(attack_one_fx), 0, player)
+  add_cards(make_card(cards_fx), 3, player)
 end
 
 function add_cards(card, amount, player)
   assert(amount >= 0, 'amount must be >= 0')
+
+  if amount == 0 then
+    return
+  end
+
   for i = 1,amount do
     add(player.deck, card)
   end
@@ -725,13 +755,13 @@ function debug(x,y)
 end
 
 __gfx__
-00000000008000000c00700000880000080000000700000009aa00004ccccc004cc0000000000000000000000000000000000000000000000000000000000000
-00000000008000000cc070000088000088800000070000009aa9a0004ccccc004cc0000000000000000000000000000000000000000000000000000000000000
-00700700008000000cc070008888880008000000070000009aa9a0004ccccc004000000000000000000000000000000000000000000000000000000000000000
-00077000888880000cc000008888880000000000000000009aa9a0004ccccc004000000000000000000000000000000000000000000000000000000000000000
-00077000088800000cc0000000880000000000000000000009aa0000400000000000000000000000000000000000000000000000000000000000000000000000
-0070070000800000dddd000000880000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000550000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000000000000
+00000000008000000c007000008800000800000007000000000000004ccccc004cc0000000000000000000000000000000000000000000000000000000000000
+00000000008000000cc0700000880000888000000700000009aa00004ccccc004cc0000000030000000000000000000000000000000000000000000000000000
+00700700008000000cc070008888880008000000070000009aa9a0004ccccc004000000077333000000000000000000000000000000000000000000000000000
+00077000888880000cc000008888880000000000000000009aa9a0004ccccc004000000076630000000000000000000000000000000000000000000000000000
+00077000088800000cc000000088000000000000000000009aa9a000400000000000000076670000000000000000000000000000000000000000000000000000
+0070070000800000dddd000000880000000000000000000009aa0000400000000000000076670000000000000000000000000000000000000000000000000000
+00000000000000000550000000000000000000000000000000000000400000000000000077770000000000000000000000000000000000000000000000000000
 00000000000000000550000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000c08080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000cc0800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
