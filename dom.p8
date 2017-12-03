@@ -33,6 +33,9 @@ selection = {
 }
 
 effect_types = {
+  gold = {
+    spr_num = 6
+  },
   attack_all = {
     spr_num = 18
   },
@@ -79,6 +82,7 @@ players = {
   [1] = {
     health = starting_health,
     points = 0,
+    gold = 0,
     deck = {},
     hand = {},
     discard_pile = {}
@@ -86,6 +90,7 @@ players = {
   [2] = {
     health = starting_health,
     points = 0,
+    gold = 0,
     deck = {},
     hand = {},
     discard_pile = {}
@@ -93,6 +98,7 @@ players = {
   [3] = {
     health = starting_health,
     points = 0,
+    gold = 0,
     deck = {},
     hand = {},
     discard_pile = {}
@@ -100,6 +106,7 @@ players = {
   [4] = {
     health = starting_health,
     points = 0,
+    gold = 0,
     deck = {},
     hand = {},
     discard_pile = {}
@@ -107,6 +114,7 @@ players = {
   [5] = {
     health = starting_health,
     points = 0,
+    gold = 0,
     deck = {},
     hand = {},
     discard_pile = {}
@@ -114,6 +122,7 @@ players = {
   [6] = {
     health = starting_health,
     points = 0,
+    gold = 0,
     deck = {},
     hand = {},
     discard_pile = {}
@@ -137,12 +146,12 @@ cur_game_state = game_states.next_turn_screen
 -- special callbacks
 function _init()
   for i=1,num_players do
-    put_cards_in_deck(players[i])
+    initialize_player_deck(players[i])
     draw_cards_from_deck(players[i])
   end
 
   -- add cards to the shop
-  put_cards_in_deck(players.shop)
+  initialize_shop_deck(players.shop)
   draw_cards_from_deck(players.shop)
 end
 
@@ -280,7 +289,9 @@ function activate_card(card)
 end
 
 function activate_effect(fx)
-  if fx.kind == effect_types.attack_all then
+  if fx.kind == effect_types.gold then
+    players[current_turn].gold += fx.value
+  elseif fx.kind == effect_types.attack_all then
     for i=1, num_players do
       if current_turn != i then
         players[i].health -= fx.value
@@ -306,10 +317,7 @@ end
 function buy_card(card)
   del(players.shop.hand, card)
   add(cur_discard_pile(), card)
-  -- if card == "first player" card
-  if card.value % 2 == 0 then
-    set_next_first_player(current_turn)
-  end
+  -- set_next_first_player(current_turn)
   advance()
 end
 
@@ -373,10 +381,22 @@ function perform_cleanup()
   draw_cards_from_deck(cur_player())
 end
 
-function put_cards_in_deck(player)
+function initialize_shop_deck()
   for i = 1,10 do
     local c = make_card()
-    add(player.deck, c)
+    add(players.shop.deck, c)
+  end
+end
+
+function initialize_player_deck(player)
+  local e = make_effect(effect_types.gold, 1)
+  add_cards(make_card(e), 3, player)
+end
+
+function add_cards(card, amount, player)
+  assert(amount >= 0, 'amount must be >= 0')
+  for i = 1,amount do
+    add(player.deck, card)
   end
 end
 
@@ -456,13 +476,16 @@ function make_effect(kind, value)
   return fx
 end
 
-function make_card()
+-- input is all of the effects
+function make_card(...)
+
   local effects = {}
-  add(effects, make_effect(effect_types.attack_one, 2))
-  add(effects, make_effect(effect_types.heal, 1))
+
+  for fx in all({...}) do
+    add(effects, fx)
+  end
 
   local c = {
-    value = rndint(50),
     effects = effects
   }
   return c
@@ -683,11 +706,11 @@ function debug(x,y)
 end
 
 __gfx__
-00000000000880000c00700000880000080000000700000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000880000cc0700000880000888000000700000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00700700000880000cc0700088888800080000000700000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00077000000880000cc0000088888800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00077000088888800cc0000000880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000880000c00700000880000080000000700000009aa0000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000880000cc070000088000088800000070000009aa9a000000000000000000000000000000000000000000000000000000000000000000000000000
+00700700000880000cc070008888880008000000070000009aa9a000000000000000000000000000000000000000000000000000000000000000000000000000
+00077000000880000cc000008888880000000000000000009aa9a000000000000000000000000000000000000000000000000000000000000000000000000000
+00077000088888800cc0000000880000000000000000000009aa0000000000000000000000000000000000000000000000000000000000000000000000000000
 0070070000888800dddd000000880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000880000550000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000550000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
