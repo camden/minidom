@@ -126,6 +126,7 @@ players = {
 }
 
 cur_card_activation = nil
+cur_active_card_effect_num = nil
 cur_active_card = nil
 
 cur_selection_kind = selection.hand
@@ -148,8 +149,9 @@ end
 function _update()
   if wait_counter > 0 then
     wait_counter -= 1
-    if wait_counter == 0 then
+    if wait_counter == 0 and wait_callback then
       wait_callback()
+      wait_callback = nil
     end
     return
   end
@@ -246,9 +248,10 @@ function continue_activating_card()
 
   if cr_status == 'dead' then
     cur_card_activation = nil
+    cur_active_card_effect_num = nil
     cur_active_card = nil
 
-    wait(10, advance)
+    advance()
   end
 end
 
@@ -256,15 +259,24 @@ function activate_card_from_hand(card)
   if not cur_card_activation then
     cur_card_activation = cocreate(activate_card)
     cur_active_card = card
+    cur_active_card_effect_num = 1
   end
 
   continue_activating_card()
 end
 
 function activate_card(card)
-  for effect in all(card.effects) do
-    activate_effect(effect)
+  local fx = card.effects[cur_active_card_effect_num]
+
+  if not fx then
+    return 
   end
+
+  activate_effect(fx)
+
+  cur_active_card_effect_num += 1
+
+  activate_card(card)
 end
 
 function activate_effect(fx)
@@ -281,6 +293,13 @@ function activate_effect(fx)
     yield()
     players[selected_index].health -= fx.value
     status_msg = 'dealt ' .. fx.value .. ' dmg to p' .. selected_index
+  elseif fx.kind == effect_types.heal then
+    selected_index = 1
+    cur_selection_kind = selection.players
+    status_msg = 'select a player. heal ' .. fx.value .. ' dmg.'
+    yield()
+    players[selected_index].health += fx.value
+    status_msg = 'restored ' .. fx.value .. ' health to p' .. selected_index
   end
 end
 
@@ -645,12 +664,7 @@ end
 
 -- get length of metatable
 function len(t)
-  local c = 0
-  for index, value in pairs(t) do
-    c += 1
-  end
-  
-  return c
+  return count(t)
 end
 
 -- from 0 to x inclusive
