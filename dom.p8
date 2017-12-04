@@ -33,6 +33,9 @@ selection = {
 }
 
 effect_types = {
+  add_actions = {
+    spr_num = 10
+  },
   draw_cards = {
     spr_num = 9
   },
@@ -73,6 +76,7 @@ next_first_player = 1
 last_first_player = next_first_player
 
 current_turn = 1
+cur_player_actions = 0
 
 status_msg = 'select a card to activate'
 
@@ -265,10 +269,22 @@ function continue_activating_card()
   local cr_status = costatus(cur_card_activation)
 
   if cr_status == 'dead' then
-    cur_card_activation = nil
-    cur_active_card_effect_num = nil
-    cur_active_card = nil
+    event_card_finished_activating()
+  end
+end
 
+function event_card_finished_activating()
+  cur_card_activation = nil
+  cur_active_card_effect_num = nil
+  cur_active_card = nil
+
+  cur_player_actions -= 1
+
+  if selected_index > len(cur_hand()) then
+    selected_index = len(cur_hand())
+  end
+
+  if cur_player_actions == 0 then 
     advance()
   end
 end
@@ -312,6 +328,8 @@ function activate_effect(fx)
         players[i].health -= fx.value
       end
     end
+  elseif fx.kind == effect_types.add_actions then
+    cur_player_actions += fx.value
   elseif fx.kind == effect_types.draw_cards then
     do_effect_draw_cards(fx)
   elseif fx.kind == effect_types.attack_one then
@@ -436,6 +454,8 @@ function start_turn()
     selected_index = 1
     cur_selection_kind = selection.hand
     sfx(2)
+
+    cur_player_actions = 1
 end
 
 function finished_round()
@@ -474,12 +494,13 @@ function initialize_shop_deck()
 end
 
 function initialize_player_deck(player)
-  local gold_fx = make_effect(effect_types.gold, 2)
+  local gold_fx = make_effect(effect_types.gold, 1)
   local points_fx = make_effect(effect_types.points, 1)
   local attack_one_fx = make_effect(effect_types.attack_one, 1)
   local cards_fx = make_effect(effect_types.draw_cards, 2)
+  local actions_fx = make_effect(effect_types.add_actions, 1)
 
-  add_cards(make_card(1, gold_fx), 3, player)
+  add_cards(make_card(1, gold_fx, actions_fx), 3, player)
   add_cards(make_card(1, points_fx), 3, player)
   add_cards(make_card(3, attack_one_fx), 0, player)
   add_cards(make_card(2, cards_fx), 0, player)
@@ -843,11 +864,11 @@ end
 
 __gfx__
 00000000000000000c007000008800000800000007000000000000004ccccc004cc0000000000000000000000000000000000000000000000000000000000000
-00000000000000000cc0700000880000888000000700000009aa00004ccccc004cc0000000030000000000000000000000000000000000000000000000000000
-00700700000000000cc070008888880008000000070000009aa9a0004ccccc004000000077333000000000000000000000000000000000000000000000000000
-00077000000000000cc000008888880000000000000000009aa9a0004ccccc004000000076630000000000000000000000000000000000000000000000000000
-00077000000000000cc000000088000000000000000000009aa9a000400000000000000076670000000000000000000000000000000000000000000000000000
-0070070000000000dddd000000880000000000000000000009aa0000400000000000000076670000000000000000000000000000000000000000000000000000
+00000000000000000cc0700000880000888000000700000009aa00004ccccc004cc000000003000003b003000000000000000000000000000000000000000000
+00700700000000000cc070008888880008000000070000009aa9a0004ccccc0040000000773330003b003bb00000000000000000000000000000000000000000
+00077000000000000cc000008888880000000000000000009aa9a0004ccccc0040000000766300003b03bbbb0000000000000000000000000000000000000000
+00077000000000000cc000000088000000000000000000009aa9a0004000000000000000766700003b000b000000000000000000000000000000000000000000
+0070070000000000dddd000000880000000000000000000009aa000040000000000000007667000003bbb0000000000000000000000000000000000000000000
 00000000000000000550000000000000000000000000000000000000400000000000000077770000000000000000000000000000000000000000000000000000
 00000000888888880550000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000c08080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
