@@ -35,6 +35,9 @@ selection = {
 }
 
 effect_types = {
+  take_first_player = {
+    spr_num = 11
+  },
   damage_self = {
     spr_num = 19
   },
@@ -365,6 +368,8 @@ function activate_effect(fx)
     players[current_turn].gold += fx.value
   elseif fx.kind == effect_types.damage_self then
     players[current_turn].health -= fx.value
+  elseif fx.kind == effect_types.take_first_player then
+    set_next_first_player(current_turn)
   elseif fx.kind == effect_types.attack_all then
     for i=1, num_players do
       if current_turn != i then
@@ -535,8 +540,9 @@ function initialize_shop_deck()
   local actions_fx = make_effect(effect_types.add_actions, 1)
   local heal_fx = make_effect(effect_types.heal, 1)
   local heal_2_fx = make_effect(effect_types.heal, 2)
-  local dmg_self_fx = make_effect(effect_types.dmg_self, 2)
-  local dmg_self_4_fx = make_effect(effect_types.dmg_self, 4)
+  local dmg_self_fx = make_effect(effect_types.damage_self, 2)
+  local dmg_self_4_fx = make_effect(effect_types.damage_self, 4)
+  local take_first_player_fx = make_effect(effect_types.take_first_player, 1)
 
   add_cards(make_card(2, gold_fx), 2, player)
   add_cards(make_card(1, points_fx), 1, player)
@@ -547,6 +553,7 @@ function initialize_shop_deck()
   add_cards(make_card(2, dmg_self_fx, attack_one_3_fx), 2, player)
   add_cards(make_card(6, heal_2_fx, attack_all_fx), 2, player)
   add_cards(make_card(4, gold_fx, actions_fx, dmg_self_4_fx), 2, player)
+  add_cards(make_card(4, take_first_player_fx), num_players, player)
 end
 
 function initialize_player_deck(player)
