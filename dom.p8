@@ -467,10 +467,10 @@ function initialize_shop_deck()
   local attack_one_fx = make_effect(effect_types.attack_one, 1)
   local cards_fx = make_effect(effect_types.draw_cards, 2)
 
-  add_cards(make_card(1, gold_fx), 1, player)
+  add_cards(make_card(2, gold_fx), 2, player)
   add_cards(make_card(1, points_fx), 1, player)
   add_cards(make_card(3, attack_one_fx), 2, player)
-  add_cards(make_card(2, cards_fx), 3, player)
+  add_cards(make_card(2, cards_fx), 2, player)
 end
 
 function initialize_player_deck(player)
@@ -479,10 +479,10 @@ function initialize_player_deck(player)
   local attack_one_fx = make_effect(effect_types.attack_one, 1)
   local cards_fx = make_effect(effect_types.draw_cards, 2)
 
-  add_cards(make_card(1, gold_fx), 1, player)
-  add_cards(make_card(1, points_fx), 1, player)
+  add_cards(make_card(1, gold_fx), 3, player)
+  add_cards(make_card(1, points_fx), 3, player)
   add_cards(make_card(3, attack_one_fx), 0, player)
-  add_cards(make_card(2, cards_fx), 3, player)
+  add_cards(make_card(2, cards_fx), 0, player)
 end
 
 function add_cards(card, amount, player)
