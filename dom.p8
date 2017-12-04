@@ -14,6 +14,7 @@ a turn consists of the following sequence:
 --]]
 
 -- constants
+max_possible_players = 6
 max_hand_size = 4
 shop_hand_size = 4
 card_w = 24
@@ -29,7 +30,8 @@ selection = {
   none = {},
   hand = {},
   shop = {},
-  players = {}
+  players = {},
+  main_menu_players = {}
 }
 
 effect_types = {
@@ -58,6 +60,7 @@ effect_types = {
 }
 
 game_states = {
+  main_menu = {},
   normal = {},
   next_turn_screen = {}
 }
@@ -148,25 +151,12 @@ cur_card_activation = nil
 cur_active_card_effect_num = nil
 cur_active_card = nil
 
-cur_selection_kind = selection.hand
-selected_index = 1
+cur_selection_kind = selection.main_menu_players
+selected_index = 2
 
-cur_game_state = game_states.next_turn_screen
+cur_game_state = game_states.main_menu
 
 -- special callbacks
-function _init()
-  for i=1,num_players do
-    initialize_player_deck(players[i])
-    shuffle_deck(players[i].deck)
-    draw_cards_from_deck(players[i])
-  end
-
-  -- add cards to the shop
-  initialize_shop_deck(players.shop)
-  draw_cards_from_deck(players.shop)
-
-  start_turn()
-end
 
 function _update()
   if wait_counter > 0 then
@@ -182,6 +172,24 @@ function _update()
 
     if btnp(4) then
       cur_game_state = game_states.normal
+    end
+
+    return
+  elseif cur_game_state == game_states.main_menu then
+
+    if btnp(0) then
+      pressed_left()
+      num_players = selected_index
+    end
+
+    if btnp(1) then
+      pressed_right()
+      num_players = selected_index
+    end
+
+    if btnp(4) then
+      cur_game_state = game_states.next_turn_screen
+      start_game()
     end
 
     return
@@ -206,13 +214,16 @@ end
 
 function _draw()
   cls(1)
-  paint_current_hand()
-  paint_shop_hand()
-  paint_ui()
-  debug(0, 0)
 
   if cur_game_state == game_states.next_turn_screen then
     paint_next_turn_screen()
+  elseif cur_game_state == game_states.normal then
+    paint_current_hand()
+    paint_shop_hand()
+    paint_ui()
+    debug(0, 0)
+  elseif cur_game_state == game_states.main_menu then
+    paint_main_menu_screen()
   end
 end
 
@@ -232,6 +243,8 @@ function get_max_num_for_selection()
 
   if cur_selection_kind == selection.hand then
     max_num = len(cur_hand())
+  elseif cur_selection_kind == selection.main_menu_players then
+    max_num = max_possible_players
   elseif cur_selection_kind == selection.shop then
     max_num = len(players.shop.hand)
   elseif cur_selection_kind == selection.players then
@@ -242,6 +255,20 @@ function get_max_num_for_selection()
 end
 
 -- game functions ---------------------------------------------
+
+function start_game()
+  for i=1,num_players do
+    initialize_player_deck(players[i])
+    shuffle_deck(players[i].deck)
+    draw_cards_from_deck(players[i])
+  end
+
+  -- add cards to the shop
+  initialize_shop_deck(players.shop)
+  draw_cards_from_deck(players.shop)
+
+  start_turn()
+end
 
 function activate_current()
   -- if there is a card currently being activated, then
@@ -628,6 +655,16 @@ end
 
 -- painting functions ---------------------------------------------
 
+function paint_main_menu_screen()
+  rectfill(0, 0, 127, 127, 3)
+  print('main menu!', 0, 0, 7)
+
+  print('number of players: ', 0, 40, 7)
+  print(num_players, 74, 40, 2)
+
+  print('press \x8e to start game!', 0, 60, 7)
+end
+
 function paint_next_turn_screen()
   rectfill(0, 0, 127, 127, 3)
   print('p' .. current_turn .. ', your turn!', 35, 40, 7)
@@ -731,7 +768,7 @@ function paint_player_bar()
   local bar_h = 14
   local y = 1
   local row_offset = 7
-  local col_offset = 44
+  local col_offset = 42
   rectfill(0, 0, 127, bar_h, 2)
   -- show health for each player
   local col_count = 0
