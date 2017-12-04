@@ -327,22 +327,21 @@ function do_effect_draw_cards(fx)
       -- now we must discard a card before we continue
       selected_index = 1
       cur_selection_kind = selection.hand
-      status_msg = 'select a card to discard'
+      status_msg = 'discard a card to draw again'
       yield()
 
       -- discard the selected card
       local card_to_discard = cur_hand()[selected_index]
-      del(cur_hand(), card_to_discard)
       add(cur_discard_pile(), card_to_discard)
-    else
-      -- TODO fix bug with drawing a second card and it not being full hand
-      -- draw a card, remove it from deck
-      local card = draw_single_card_from_deck()
-      -- now add the card to the hand
-      add(cur_hand(), card)
-
-      cards_drawn += 1
+      del(cur_hand(), card_to_discard)
     end
+
+    -- draw a card (which removes it from the deck)
+    local card = draw_single_card_from_deck(cur_player())
+    -- now add the card to the hand
+    add(cur_hand(), card)
+
+    cards_drawn += 1
   end
 end
 
@@ -483,12 +482,12 @@ end
 
 -- removes that card from the deck
 function draw_single_card_from_deck(player)
-  if len(cur_deck()) == 0 then
+  if len(player.deck) == 0 then
     shuffle_discard_back_into_deck(player)
   end
 
-  local c = cur_deck()[1]
-  del(cur_deck(), c)
+  local c = player.deck[1]
+  local r = del(player.deck, c)
 
   return c
 end
