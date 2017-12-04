@@ -23,7 +23,7 @@ card_spacing = 6
 card_spacing_vert = 12
 current_player_color = 9
 
-starting_health = 15
+starting_health = 10
 winning_points = 20
 
 selection = {
@@ -603,7 +603,7 @@ function initialize_player_deck(player)
 
   add_cards(make_card(1, gold_fx, actions_fx), 3, player)
   add_cards(make_card(1, points_fx), 3, player)
-  add_cards(make_card(1, attack_one), 1, player)
+  add_cards(make_card(1, attack_one_fx), 1, player)
 end
 
 function add_cards(card, amount, player)
