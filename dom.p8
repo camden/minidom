@@ -35,6 +35,9 @@ selection = {
 }
 
 effect_types = {
+  steal_points = {
+    spr_num = 13
+  },
   discard_cards = {
     spr_num = 12
   },
@@ -394,6 +397,8 @@ function activate_effect(fx)
     do_effect_draw_cards(fx)
   elseif fx.kind == effect_types.attack_one then
     do_effect_attack_one(fx)
+  elseif fx.kind == effect_types.steal_points then
+    do_effect_steal_points(fx)
   elseif fx.kind == effect_types.heal then
     do_effect_heal(fx)
   end
@@ -461,8 +466,23 @@ function do_effect_attack_one(fx)
   status_msg = 'dealt ' .. fx.value .. ' dmg to p' .. selected_index
 end
 
-function do_effect_heal(fx)
+function do_effect_steal_points(fx)
   selected_index = 1
+
+  if current_turn == 1 and num_players > 1 then
+    selected_index = 2
+  end
+
+  cur_selection_kind = selection.players
+  status_msg = 'select a player. steal ' .. fx.value .. ' pts.'
+  yield()
+  players[current_turn].points += fx.value
+  players[selected_index].points -= fx.value
+  status_msg = 'stole ' .. fx.value .. ' pts from p' .. selected_index
+end
+
+function do_effect_heal(fx)
+  selected_index = current_turn
   cur_selection_kind = selection.players
   status_msg = 'select a player. heal ' .. fx.value .. ' dmg.'
   yield()
@@ -570,8 +590,11 @@ end
 function initialize_shop_deck()
   local player = players.shop
   local gold_fx = make_effect(effect_types.gold, 3)
+  local gold_3_fx = make_effect(effect_types.gold, 3)
   local gold_4_fx = make_effect(effect_types.gold, 4)
   local points_fx = make_effect(effect_types.points, 1)
+  local points_minus_1_fx = make_effect(effect_types.points, -1)
+  local points_3_fx = make_effect(effect_types.points, 3)
   local attack_all_fx = make_effect(effect_types.attack_all, 2)
   local attack_one_1_fx = make_effect(effect_types.attack_one, 1)
   local attack_one_2_fx = make_effect(effect_types.attack_one, 2)
@@ -582,9 +605,11 @@ function initialize_shop_deck()
   local heal_2_fx = make_effect(effect_types.heal, 2)
   local heal_3_fx = make_effect(effect_types.heal, 3)
   local dmg_self_fx = make_effect(effect_types.damage_self, 2)
+  local dmg_self_3_fx = make_effect(effect_types.damage_self, 3)
   local dmg_self_4_fx = make_effect(effect_types.damage_self, 4)
   local take_first_player_fx = make_effect(effect_types.take_first_player, 1)
   local discard_fx = make_effect(effect_types.discard_cards, 2)
+  local steal_points_fx = make_effect(effect_types.steal_points, 2)
 
   add_cards(make_card(2, gold_fx), 4, player)
   add_cards(make_card(4, gold_4_fx), 3, player)
@@ -598,6 +623,9 @@ function initialize_shop_deck()
   add_cards(make_card(4, gold_fx, actions_fx, dmg_self_4_fx), 2, player)
   add_cards(make_card(3, take_first_player_fx), num_players, player)
   add_cards(make_card(3, discard_fx, heal_3_fx), 3, player)
+  add_cards(make_card(4, dmg_self_3_fx, points_3_fx), 3, player)
+  add_cards(make_card(5, steal_points_fx), 3, player)
+  add_cards(make_card(3, gold_3_fx, actions_fx, points_minus_1_fx), 3, player)
 end
 
 function initialize_player_deck(player)
