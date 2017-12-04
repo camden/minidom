@@ -35,6 +35,9 @@ selection = {
 }
 
 effect_types = {
+  discard_cards = {
+    spr_num = 0
+  },
   take_first_player = {
     spr_num = 11
   },
@@ -316,6 +319,8 @@ function event_card_finished_activating()
   cur_active_card_effect_num = nil
   cur_active_card = nil
 
+  update_status_message(1)
+
   cur_player_actions -= 1
 
   if selected_index > len(cur_hand()) then
@@ -378,12 +383,36 @@ function activate_effect(fx)
     end
   elseif fx.kind == effect_types.add_actions then
     cur_player_actions += fx.value
+  elseif fx.kind == effect_types.discard_cards then
+    do_effect_discard_cards(fx)
   elseif fx.kind == effect_types.draw_cards then
     do_effect_draw_cards(fx)
   elseif fx.kind == effect_types.attack_one then
     do_effect_attack_one(fx)
   elseif fx.kind == effect_types.heal then
     do_effect_heal(fx)
+  end
+end
+
+function do_effect_discard_cards(fx)
+  local cards_discarded = 0
+
+  while cards_discarded < fx.value do
+    if len(cur_hand()) == 0 then
+      return
+    end
+
+    selected_index = 1
+    cur_selection_kind = selection.hand
+    status_msg = 'discard a card.'
+
+    yield()
+
+    -- discard the selected card
+    local card_to_discard = cur_hand()[selected_index]
+    add(cur_discard_pile(), card_to_discard)
+    del(cur_hand(), card_to_discard)
+    cards_discarded += 1
   end
 end
 
@@ -395,7 +424,7 @@ function do_effect_draw_cards(fx)
       -- now we must discard a card before we continue
       selected_index = 1
       cur_selection_kind = selection.hand
-      status_msg = 'discard a card to draw again'
+      status_msg = 'discard a card to draw again.'
       yield()
 
       -- discard the selected card
@@ -564,9 +593,11 @@ function initialize_player_deck(player)
   local attack_one_fx = make_effect(effect_types.attack_one, 1)
   local cards_fx = make_effect(effect_types.draw_cards, 2)
   local actions_fx = make_effect(effect_types.add_actions, 1)
+  local discard_fx = make_effect(effect_types.discard_cards, 1)
 
   add_cards(make_card(1, gold_fx, actions_fx), 3, player)
   add_cards(make_card(1, points_fx), 3, player)
+  add_cards(make_card(1, discard_fx, points_fx, actions_fx), 4, player)
 end
 
 function add_cards(card, amount, player)
