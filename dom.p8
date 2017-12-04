@@ -17,7 +17,7 @@ a turn consists of the following sequence:
 max_hand_size = 4
 shop_hand_size = 4
 card_w = 24
-card_h = 32
+card_h = 40
 card_spacing = 6
 card_spacing_vert = 12
 current_player_color = 9
@@ -363,11 +363,28 @@ function do_effect_heal(fx)
   status_msg = 'restored ' .. fx.value .. ' health to p' .. selected_index
 end
 
+function can_afford_current_shop_card()
+  local cur_shop_card = players.shop.hand[selected_index]
+
+  return cur_player().gold >= cur_shop_card.cost
+end
+
+-- todo deduct gold
 function buy_card(card)
-  del(players.shop.hand, card)
-  add(cur_discard_pile(), card)
-  -- set_next_first_player(current_turn)
-  advance()
+  if can_afford_current_shop_card() then
+    del(players.shop.hand, card)
+    add(cur_discard_pile(), card)
+    -- set_next_first_player(current_turn)
+    advance()
+  else
+    event_cannot_afford_card()
+  end
+end
+
+function event_cannot_afford_card()
+  -- play sound!
+  status_msg = 'you cannot afford this card.'
+  wait(10, function() update_status_message(2) end)
 end
 
 -- expects a number where 1 is first player, etc
@@ -444,10 +461,10 @@ function initialize_player_deck(player)
   local attack_one_fx = make_effect(effect_types.attack_one, 1)
   local cards_fx = make_effect(effect_types.draw_cards, 2)
 
-  add_cards(make_card(gold_fx), 1, player)
-  add_cards(make_card(points_fx), 1, player)
-  add_cards(make_card(attack_one_fx), 0, player)
-  add_cards(make_card(cards_fx), 3, player)
+  add_cards(make_card(1, gold_fx, gold_fx, gold_fx), 1, player)
+  add_cards(make_card(1, points_fx), 1, player)
+  add_cards(make_card(3, attack_one_fx), 0, player)
+  add_cards(make_card(2, cards_fx), 3, player)
 end
 
 function add_cards(card, amount, player)
@@ -542,7 +559,13 @@ function make_effect(kind, value)
 end
 
 -- input is all of the effects
-function make_card(...)
+function make_card(c, ...)
+  local cost = c
+
+  if not c then
+    cost = 1
+  end
+
   local effects = {}
 
   for fx in all({...}) do
@@ -550,6 +573,7 @@ function make_card(...)
   end
 
   local c = {
+    cost = cost,
     effects = effects
   }
   return c
@@ -580,26 +604,42 @@ function paint_shop_hand()
 end
 
 function paint_player_card(card, i)
-  paint_card(card, i, 127 - (card_h + card_spacing_vert), selection.hand)
+  paint_card(card, i, 127 - (card_h + card_spacing_vert), selection.hand, false)
 end
 
 function paint_shop_card(card, i)
-  paint_card(card, i, 36, selection.shop)
+  paint_card(card, i, 28, selection.shop, true)
 end
 
-function paint_card(card, card_idx, y0, selection_kind)
+function paint_card(card, card_idx, y0, selection_kind, show_cost)
   local x0 = card_spacing + (card_idx - 1) * (card_w + card_spacing)
 
   -- also check for mode == selecting
   if (selection_kind == cur_selection_kind) and
     (selected_index == card_idx) then
-    y0 -= 1
-    spr(1, x0 + (card_w / 2 - 2), y0 - 8)
+    y0 -= 2
+
+    local dark_bevel_color = 3
+    local light_bevel_color = 11
+
+    if selection_kind == selection.shop and 
+      not can_afford_current_shop_card() then
+      dark_bevel_color = 2
+      light_bevel_color = 14
+    end
+
+    rect(x0 - 1, y0 - 1, x0 + card_w + 1, y0 + card_h + 1, dark_bevel_color)
+    line(x0, y0 - 1, x0 + card_w + 1, y0 - 1, light_bevel_color)
+    line(x0 + card_w + 1, y0, x0 + card_w + 1, y0 + card_h, light_bevel_color)
   end
 
   rectfill(x0, y0, x0 + card_w, y0 + card_h, 6)
 
   paint_card_icon(x0, y0, card)
+
+  if show_cost then
+    paint_card_cost(x0, y0, card)
+  end
 end
 
 function paint_card_icon(x, y0, card)
@@ -618,6 +658,12 @@ function paint_card_effect(x, y, fx)
     spr(sprite_idx, x, y)
   end
   print(fx.value, x + 10, y + 1, 0)
+end
+
+function paint_card_cost(x, y, card)
+  rectfill(x + 1, y + card_h - 1, x + card_w - 1, y + card_h - 7, 7)
+  print('$', x + card_w / 2 - 3, y + card_h - 6, 9)
+  print(card.cost, x + card_w / 2 + 1, y + card_h - 6, 0)
 end
 
 function paint_ui()
@@ -778,14 +824,14 @@ function debug(x,y)
 end
 
 __gfx__
-00000000008000000c007000008800000800000007000000000000004ccccc004cc0000000000000000000000000000000000000000000000000000000000000
-00000000008000000cc0700000880000888000000700000009aa00004ccccc004cc0000000030000000000000000000000000000000000000000000000000000
-00700700008000000cc070008888880008000000070000009aa9a0004ccccc004000000077333000000000000000000000000000000000000000000000000000
-00077000888880000cc000008888880000000000000000009aa9a0004ccccc004000000076630000000000000000000000000000000000000000000000000000
-00077000088800000cc000000088000000000000000000009aa9a000400000000000000076670000000000000000000000000000000000000000000000000000
-0070070000800000dddd000000880000000000000000000009aa0000400000000000000076670000000000000000000000000000000000000000000000000000
+00000000000000000c007000008800000800000007000000000000004ccccc004cc0000000000000000000000000000000000000000000000000000000000000
+00000000000000000cc0700000880000888000000700000009aa00004ccccc004cc0000000030000000000000000000000000000000000000000000000000000
+00700700000000000cc070008888880008000000070000009aa9a0004ccccc004000000077333000000000000000000000000000000000000000000000000000
+00077000000000000cc000008888880000000000000000009aa9a0004ccccc004000000076630000000000000000000000000000000000000000000000000000
+00077000000000000cc000000088000000000000000000009aa9a000400000000000000076670000000000000000000000000000000000000000000000000000
+0070070000000000dddd000000880000000000000000000009aa0000400000000000000076670000000000000000000000000000000000000000000000000000
 00000000000000000550000000000000000000000000000000000000400000000000000077770000000000000000000000000000000000000000000000000000
-00000000000000000550000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000000000000
+00000000888888880550000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000c08080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000cc0800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000cc8080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
