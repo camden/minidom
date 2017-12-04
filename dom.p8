@@ -272,6 +272,11 @@ function start_game()
     initialize_player_deck(players[i])
     shuffle_deck(players[i].deck)
     draw_cards_from_deck(players[i])
+
+    -- each player starts with one less health
+    -- so when num_players = 3 and i = 1, the first player loses 2 health
+    -- and the second player loses 1 health
+    players[i].health -= num_players - i
   end
 
   -- add cards to the shop
@@ -575,7 +580,7 @@ function initialize_shop_deck()
   local actions_fx = make_effect(effect_types.add_actions, 1)
   local heal_fx = make_effect(effect_types.heal, 1)
   local heal_2_fx = make_effect(effect_types.heal, 2)
-  local heal_3_fx = make_effect(effect_types.heal, 2)
+  local heal_3_fx = make_effect(effect_types.heal, 3)
   local dmg_self_fx = make_effect(effect_types.damage_self, 2)
   local dmg_self_4_fx = make_effect(effect_types.damage_self, 4)
   local take_first_player_fx = make_effect(effect_types.take_first_player, 1)
@@ -583,7 +588,7 @@ function initialize_shop_deck()
 
   add_cards(make_card(2, gold_fx), 4, player)
   add_cards(make_card(4, gold_4_fx), 3, player)
-  add_cards(make_card(1, points_fx, actions_fx), 3, player)
+  add_cards(make_card(3, points_fx, actions_fx), 3, player)
   add_cards(make_card(3, attack_one_2_fx), 3, player)
   add_cards(make_card(3, cards_fx, actions_fx), 2, player)
   add_cards(make_card(2, heal_fx), 2, player)
