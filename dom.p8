@@ -547,15 +547,15 @@ function initialize_shop_deck()
 
   add_cards(make_card(2, gold_fx), 4, player)
   add_cards(make_card(4, gold_4_fx), 3, player)
-  add_cards(make_card(1, points_fx), 1, player)
+  add_cards(make_card(1, points_fx, actions_fx), 3, player)
   add_cards(make_card(3, attack_one_2_fx), 3, player)
   add_cards(make_card(3, cards_fx, actions_fx), 2, player)
   add_cards(make_card(2, heal_fx), 2, player)
-  add_cards(make_card(2, points_fx, attack_one_1_fx), 2, player)
+  add_cards(make_card(3, points_fx, attack_one_1_fx), 2, player)
   add_cards(make_card(2, dmg_self_fx, attack_one_3_fx), 2, player)
   add_cards(make_card(6, heal_2_fx, attack_all_fx), 2, player)
   add_cards(make_card(4, gold_fx, actions_fx, dmg_self_4_fx), 2, player)
-  add_cards(make_card(3, take_first_player), num_players, player)
+  add_cards(make_card(3, take_first_player_fx), num_players, player)
 end
 
 function initialize_player_deck(player)
