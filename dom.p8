@@ -66,7 +66,7 @@ dbg3 = ''
 dbg4 = ''
 dbg5 = ''
 
-num_players = 3
+num_players = 2
 
 -- who has the first player counter?
 next_first_player = 1
@@ -461,19 +461,25 @@ function perform_cleanup()
 end
 
 function initialize_shop_deck()
-  for i = 1,10 do
-    local c = make_card()
-    add(players.shop.deck, c)
-  end
-end
-
-function initialize_player_deck(player)
-  local gold_fx = make_effect(effect_types.gold, 1)
+  local player = players.shop
+  local gold_fx = make_effect(effect_types.gold, 3)
   local points_fx = make_effect(effect_types.points, 1)
   local attack_one_fx = make_effect(effect_types.attack_one, 1)
   local cards_fx = make_effect(effect_types.draw_cards, 2)
 
-  add_cards(make_card(1, gold_fx, gold_fx, gold_fx), 1, player)
+  add_cards(make_card(1, gold_fx), 1, player)
+  add_cards(make_card(1, points_fx), 1, player)
+  add_cards(make_card(3, attack_one_fx), 2, player)
+  add_cards(make_card(2, cards_fx), 3, player)
+end
+
+function initialize_player_deck(player)
+  local gold_fx = make_effect(effect_types.gold, 2)
+  local points_fx = make_effect(effect_types.points, 1)
+  local attack_one_fx = make_effect(effect_types.attack_one, 1)
+  local cards_fx = make_effect(effect_types.draw_cards, 2)
+
+  add_cards(make_card(1, gold_fx), 1, player)
   add_cards(make_card(1, points_fx), 1, player)
   add_cards(make_card(3, attack_one_fx), 0, player)
   add_cards(make_card(2, cards_fx), 3, player)
